@@ -7,8 +7,8 @@ const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
 
 #[derive(Debug, Clone)]
 pub(crate) struct Topic {
-    title: String,
-    url: String,
+    pub title: String,
+    pub url: String,
 }
 
 impl Display for Topic {
@@ -63,11 +63,11 @@ pub(crate) struct Question {
     correct_answer: QuestionOption,
 }
 
-pub(crate) fn fetch_questions(topic: Topic) -> Result<Vec<Question>, reqwest::Error> {
+pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
     let client = reqwest::blocking::Client::builder()
         .user_agent(USER_AGENT)
         .build()?;
-    let url = BASE_URL.to_string() + &topic.url + "&pagex=1&pageSize=5";
+    let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=5";
     let response = client.get(url).send()?;
     let html = response.text()?;
 
