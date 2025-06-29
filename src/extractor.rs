@@ -1,9 +1,9 @@
 use reqwest;
-use scraper::{self, Element, ElementRef};
+use scraper;
 use std::fmt::Display;
 
 const BASE_URL: &str = "https://etesty2.mdcr.cz";
-const USER_AGENT: &str = "testing"; // TODO: change to a valid user agent string
+const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
 
 #[derive(Debug, Clone)]
 pub(crate) struct Topic {
@@ -136,7 +136,7 @@ pub(crate) fn fetch_questions(topic: Topic) -> Result<Vec<Question>, reqwest::Er
     Ok(questions)
 }
 
-fn extract_text_by_selector(element: &ElementRef, selector: &str) -> String {
+fn extract_text_by_selector(element: &scraper::ElementRef, selector: &str) -> String {
     element
         .select(&scraper::Selector::parse(selector).unwrap())
         .next()
@@ -145,7 +145,11 @@ fn extract_text_by_selector(element: &ElementRef, selector: &str) -> String {
         .collect()
 }
 
-fn extract_bool_attribute_by_selector(element: &ElementRef, selector: &str, attr: &str) -> bool {
+fn extract_bool_attribute_by_selector(
+    element: &scraper::ElementRef,
+    selector: &str,
+    attr: &str,
+) -> bool {
     element
         .select(&scraper::Selector::parse(selector).unwrap())
         .next()
