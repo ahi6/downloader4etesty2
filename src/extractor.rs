@@ -1,5 +1,6 @@
 use reqwest;
 use scraper;
+use serde::Serialize;
 use std::fmt::Display;
 
 const BASE_URL: &str = "https://etesty2.mdcr.cz";
@@ -45,26 +46,27 @@ pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
     Ok(topics)
 }
 
-#[derive(Debug)]
-pub(crate) struct Question {
-    code: String,
-    date_added: String,
-    question: String,
-    option_a: QuestionOption,
-    option_b: QuestionOption,
-    option_c: QuestionOption,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 enum QuestionOptionType {
     Text(String),
     Image(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct QuestionOption {
     content: QuestionOptionType,
     is_correct: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct Question {
+    code: String,
+    date_added: String,
+    question_text: String,
+    question_image: Option<String>,
+    option_a: QuestionOption,
+    option_b: QuestionOption,
+    option_c: QuestionOption,
 }
 
 pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
@@ -90,7 +92,10 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
                 &question_panel,
                 "div.QuestionText span.QuestionChangeDate",
             );
-            let question = extract_text_by_selector(&question_panel, "div.QuestionImagePanel");
+            let question_text = extract_text_by_selector(&question_panel, "div.QuestionImagePanel");
+
+            let question_image =
+                extract_question_image_by_selector(&question_panel, ".question-image > img");
 
             let mut options = extract_question_options(&question_panel);
 
@@ -101,7 +106,8 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
             Question {
                 code,
                 date_added,
-                question,
+                question_text,
+                question_image,
                 option_a,
                 option_b,
                 option_c,
@@ -118,6 +124,16 @@ fn extract_text_by_selector(element: &scraper::ElementRef, selector: &str) -> St
         .expect("No element found")
         .text()
         .collect()
+}
+
+fn extract_question_image_by_selector(
+    element: &scraper::ElementRef,
+    selector: &str,
+) -> Option<String> {
+    element
+        .select(&scraper::Selector::parse(selector).expect("Invalid selector"))
+        .next()
+        .map(|img| img.attr("src").unwrap().to_string())
 }
 
 fn extract_question_options(question_panel: &scraper::ElementRef) -> Vec<QuestionOption> {

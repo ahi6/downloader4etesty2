@@ -172,6 +172,8 @@ dependencies = [
  "inquire",
  "reqwest",
  "scraper",
+ "serde",
+ "serde_json",
  "yaml-rust",
 ]
 
