@@ -92,7 +92,9 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
                 &question_panel,
                 "div.QuestionText span.QuestionChangeDate",
             );
-            let question_text = extract_text_by_selector(&question_panel, "div.QuestionImagePanel");
+            let question_text = extract_text_by_selector(&question_panel, "div.QuestionImagePanel")
+                .trim()
+                .to_string();
 
             let question_image =
                 extract_question_image_by_selector(&question_panel, ".question-image > img");
