@@ -46,21 +46,25 @@ pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
 }
 
 #[derive(Debug)]
-pub(crate) enum QuestionOption {
-    A,
-    B,
-    C,
-}
-
-#[derive(Debug)]
 pub(crate) struct Question {
     code: String,
     date_added: String,
     question: String,
-    option_a: String,
-    option_b: String,
-    option_c: String,
-    correct_answer: QuestionOption,
+    option_a: QuestionOption,
+    option_b: QuestionOption,
+    option_c: QuestionOption,
+}
+
+#[derive(Debug)]
+enum QuestionOptionType {
+    Text(String),
+    Image(String),
+}
+
+#[derive(Debug)]
+struct QuestionOption {
+    content: QuestionOptionType,
+    is_correct: bool,
 }
 
 pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
@@ -88,39 +92,11 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
             );
             let question = extract_text_by_selector(&question_panel, "div.QuestionImagePanel");
 
-            let option_a_selector = "div.AnswersPanel div:nth-of-type(1) div.answer-text";
-            let option_a = extract_text_by_selector(&question_panel, option_a_selector);
-            let option_a_correct = extract_bool_attribute_by_selector(
-                &question_panel,
-                option_a_selector,
-                "data-iscorrect",
-            );
+            let mut options = extract_question_options(&question_panel);
 
-            let option_b_selector = "div.AnswersPanel div:nth-of-type(2) div.answer-text";
-            let option_b = extract_text_by_selector(&question_panel, option_b_selector);
-            let option_b_correct = extract_bool_attribute_by_selector(
-                &question_panel,
-                option_b_selector,
-                "data-iscorrect",
-            );
-
-            let option_c_selector = "div.AnswersPanel div:nth-of-type(3) div.answer-text";
-            let option_c = extract_text_by_selector(&question_panel, option_c_selector);
-            let option_c_correct = extract_bool_attribute_by_selector(
-                &question_panel,
-                option_c_selector,
-                "data-iscorrect",
-            );
-
-            let correct_answer = if option_a_correct {
-                QuestionOption::A
-            } else if option_b_correct {
-                QuestionOption::B
-            } else if option_c_correct {
-                QuestionOption::C
-            } else {
-                panic!("No correct answer found")
-            };
+            let option_a = options.pop().unwrap();
+            let option_b = options.pop().unwrap();
+            let option_c = options.pop().unwrap();
 
             Question {
                 code,
@@ -129,7 +105,6 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
                 option_a,
                 option_b,
                 option_c,
-                correct_answer,
             }
         })
         .collect();
@@ -138,26 +113,49 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
 
 fn extract_text_by_selector(element: &scraper::ElementRef, selector: &str) -> String {
     element
-        .select(&scraper::Selector::parse(selector).unwrap())
+        .select(&scraper::Selector::parse(selector).expect("Invalid selector"))
         .next()
-        .unwrap()
+        .expect("No element found")
         .text()
         .collect()
 }
 
-fn extract_bool_attribute_by_selector(
-    element: &scraper::ElementRef,
-    selector: &str,
-    attr: &str,
-) -> bool {
-    element
-        .select(&scraper::Selector::parse(selector).unwrap())
-        .next()
-        .unwrap()
-        .value()
-        .attr(attr)
-        .unwrap()
-        .to_lowercase()
-        .parse::<bool>()
-        .unwrap()
+fn extract_question_options(question_panel: &scraper::ElementRef) -> Vec<QuestionOption> {
+    let mut question_options = Vec::new();
+
+    let option_selector = "div.AnswersPanel > div:nth-of-type(1) div[data-iscorrect]";
+
+    for option in question_panel.select(&scraper::Selector::parse(option_selector).unwrap()) {
+        let is_correct = option
+            .attr("data-iscorrect")
+            .unwrap()
+            .to_lowercase()
+            .parse::<bool>()
+            .unwrap();
+
+        let class = option.attr("class").unwrap();
+
+        let content = match class {
+            "answer-text" => {
+                let text = option.text().collect();
+                QuestionOptionType::Text(text)
+            }
+            "answer-image" => {
+                let img = option
+                    .select(&scraper::Selector::parse("img").unwrap())
+                    .next()
+                    .unwrap();
+                let src = img.attr("src").unwrap();
+                QuestionOptionType::Image(src.to_string())
+            }
+            _ => unimplemented!(),
+        };
+
+        question_options.push(QuestionOption {
+            content,
+            is_correct,
+        });
+    }
+
+    question_options
 }
