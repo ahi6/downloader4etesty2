@@ -30,7 +30,7 @@ fn main() {
     std::fs::create_dir_all(output_path).expect("Failed to create output directory");
 
     for topic in topics_to_download {
-        // File path is shortened to avoid errors from file length limit
+        // File path is truncated to avoid errors from file length limit
         let path = output_path
             .join(String::from(topic.chars().take(24).collect::<String>()).to_string() + ".json");
         let topic_file = std::fs::File::create(&path).expect("Failed to create file");
