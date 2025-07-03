@@ -18,6 +18,7 @@ fn main() {
         "Select topics to download:",
         topic_map.keys().cloned().collect(),
     )
+    .with_page_size(10)
     .prompt()
     .unwrap();
 
