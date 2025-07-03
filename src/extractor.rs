@@ -1,22 +1,9 @@
+use crate::types::*;
 use reqwest;
 use scraper;
-use serde::Serialize;
-use std::fmt::Display;
 
 const BASE_URL: &str = "https://etesty2.mdcr.cz";
 const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
-
-#[derive(Debug, Clone)]
-pub(crate) struct Topic {
-    pub title: String,
-    pub url: String,
-}
-
-impl Display for Topic {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({})", self.title, self.url)
-    }
-}
 
 pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
     let client = reqwest::blocking::Client::builder()
@@ -44,29 +31,6 @@ pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
         .collect();
 
     Ok(topics)
-}
-
-#[derive(Debug, Serialize)]
-enum QuestionOptionType {
-    Text(String),
-    Image(String),
-}
-
-#[derive(Debug, Serialize)]
-struct QuestionOption {
-    content: QuestionOptionType,
-    is_correct: bool,
-}
-
-#[derive(Debug, Serialize)]
-pub(crate) struct Question {
-    code: String,
-    date_added: String,
-    question_text: String,
-    question_image: Option<String>,
-    option_a: QuestionOption,
-    option_b: QuestionOption,
-    option_c: QuestionOption,
 }
 
 pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {

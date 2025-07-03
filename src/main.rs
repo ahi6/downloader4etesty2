@@ -1,4 +1,6 @@
 mod extractor;
+mod types;
+
 use inquire;
 use serde_json;
 use std::collections::HashMap;
