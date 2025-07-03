@@ -3,17 +3,22 @@ use reqwest;
 use scraper;
 
 const BASE_URL: &str = "https://etesty2.mdcr.cz";
-const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
+// const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
 
-pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
+fn get_page(url: &str) -> Result<scraper::Html, reqwest::Error> {
     let client = reqwest::blocking::Client::builder()
-        .user_agent(USER_AGENT)
+        // .user_agent(USER_AGENT)
         .build()?;
-    let url = format!("{}/ro/Bulletin", BASE_URL);
     let response = client.get(url).send()?;
     let html = response.text()?;
 
     let document = scraper::Html::parse_document(&html);
+    Ok(document)
+}
+
+pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
+    let url = format!("{}/ro/Bulletin", BASE_URL);
+    let document = get_page(&url)?;
     let selector = scraper::Selector::parse("html body div.content.content-column div.side-panel ul.side-panel-list li.side-panel-item a.side-panel-link").unwrap();
 
     let elements = document.select(&selector);
@@ -34,14 +39,8 @@ pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
 }
 
 pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
-    let client = reqwest::blocking::Client::builder()
-        .user_agent(USER_AGENT)
-        .build()?;
     let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=5";
-    let response = client.get(url).send()?;
-    let html = response.text()?;
-
-    let document = scraper::Html::parse_document(&html);
+    let document = get_page(&url)?;
     let selector = scraper::Selector::parse(
         "html body div.content.content-column div.container div.QuestionPanel",
     )
