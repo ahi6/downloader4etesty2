@@ -96,7 +96,8 @@ impl Extractor {
     }
 
     pub fn fetch_media_file(&self, relative_url: &str) -> Result<bytes::Bytes, reqwest::Error> {
-        let response = self.client.get(relative_url).send()?;
+        let url = BASE_URL.to_string() + relative_url;
+        let response = self.client.get(&url).send()?;
         response.bytes()
     }
 }
