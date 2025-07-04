@@ -39,7 +39,7 @@ pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
 }
 
 pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
-    let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=5";
+    let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=9999";
     let document = get_page(&url)?;
     let selector = scraper::Selector::parse(
         "html body div.content.content-column div.container div.QuestionPanel",
@@ -66,7 +66,7 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
 
             let option_a = options.pop().unwrap();
             let option_b = options.pop().unwrap();
-            let option_c = options.pop().unwrap();
+            let option_c = options.pop(); // option C is not always present
 
             Question {
                 code,

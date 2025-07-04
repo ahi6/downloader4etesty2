@@ -33,5 +33,5 @@ pub(crate) struct Question {
     pub question_image: Option<String>,
     pub option_a: QuestionOption,
     pub option_b: QuestionOption,
-    pub option_c: QuestionOption,
+    pub option_c: Option<QuestionOption>, // option C is not always present
 }
