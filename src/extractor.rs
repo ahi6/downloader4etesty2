@@ -1,6 +1,4 @@
 use crate::types::*;
-use reqwest;
-use scraper;
 
 const BASE_URL: &str = "https://etesty2.mdcr.cz";
 // const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
@@ -95,6 +93,11 @@ impl Extractor {
             })
             .collect();
         Ok(questions)
+    }
+
+    pub fn fetch_media_file(&self, relative_url: &str) -> Result<bytes::Bytes, reqwest::Error> {
+        let response = self.client.get(relative_url).send()?;
+        response.bytes()
     }
 }
 
