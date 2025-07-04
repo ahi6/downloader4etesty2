@@ -60,7 +60,10 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
                 .to_string();
 
             let question_image =
-                extract_question_image_by_selector(&question_panel, ".question-image > img");
+                extract_question_media_by_selector(&question_panel, ".question-image > img");
+
+            let question_video =
+                extract_question_media_by_selector(&question_panel, ".question-video > video");
 
             let mut options = extract_question_options(&question_panel);
 
@@ -73,6 +76,7 @@ pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest:
                 date_added,
                 question_text,
                 question_image,
+                question_video,
                 option_a,
                 option_b,
                 option_c,
@@ -91,14 +95,14 @@ fn extract_text_by_selector(element: &scraper::ElementRef, selector: &str) -> St
         .collect()
 }
 
-fn extract_question_image_by_selector(
+fn extract_question_media_by_selector(
     element: &scraper::ElementRef,
     selector: &str,
 ) -> Option<String> {
     element
         .select(&scraper::Selector::parse(selector).expect("Invalid selector"))
         .next()
-        .map(|img| img.attr("src").unwrap().to_string())
+        .map(|media_element| media_element.attr("src").unwrap().to_string())
 }
 
 fn extract_question_options(question_panel: &scraper::ElementRef) -> Vec<QuestionOption> {

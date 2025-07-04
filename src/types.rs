@@ -31,6 +31,7 @@ pub(crate) struct Question {
     pub date_added: String,
     pub question_text: String,
     pub question_image: Option<String>,
+    pub question_video: Option<String>,
     pub option_a: QuestionOption,
     pub option_b: QuestionOption,
     pub option_c: Option<QuestionOption>, // option C is not always present
