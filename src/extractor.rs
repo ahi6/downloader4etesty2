@@ -5,85 +5,97 @@ use scraper;
 const BASE_URL: &str = "https://etesty2.mdcr.cz";
 // const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
 
-fn get_page(url: &str) -> Result<scraper::Html, reqwest::Error> {
-    let client = reqwest::blocking::Client::builder()
-        // .user_agent(USER_AGENT)
-        .build()?;
-    let response = client.get(url).send()?;
-    let html = response.text()?;
-
-    let document = scraper::Html::parse_document(&html);
-    Ok(document)
+pub struct Extractor {
+    client: reqwest::blocking::Client,
 }
 
-pub(crate) fn fetch_bulletin_topics() -> Result<Vec<Topic>, reqwest::Error> {
-    let url = format!("{}/ro/Bulletin", BASE_URL);
-    let document = get_page(&url)?;
-    let selector = scraper::Selector::parse("html body div.content.content-column div.side-panel ul.side-panel-list li.side-panel-item a.side-panel-link").unwrap();
+impl Extractor {
+    pub fn new() -> Self {
+        let client = reqwest::blocking::Client::builder()
+            // .user_agent(USER_AGENT)
+            .build()
+            .expect("Failed to create client");
+        Extractor { client }
+    }
 
-    let elements = document.select(&selector);
-    let topics = elements
-        .map(|element| {
-            let text = element.text().collect::<String>();
-            let url = element
-                .value()
-                .attr("href")
-                .unwrap()
-                .parse::<String>()
-                .unwrap();
-            Topic { title: text, url }
-        })
-        .collect();
+    fn get_page(&self, url: &str) -> Result<scraper::Html, reqwest::Error> {
+        let response = self.client.get(url).send()?;
+        let html = response.text()?;
 
-    Ok(topics)
-}
+        let document = scraper::Html::parse_document(&html);
+        Ok(document)
+    }
 
-pub(crate) fn fetch_questions(topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
-    let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=9999";
-    let document = get_page(&url)?;
-    let selector = scraper::Selector::parse(
-        "html body div.content.content-column div.container div.QuestionPanel",
-    )
-    .unwrap();
+    pub fn fetch_bulletin_topics(&self) -> Result<Vec<Topic>, reqwest::Error> {
+        let url = format!("{}/ro/Bulletin", BASE_URL);
+        let document = self.get_page(&url)?;
+        let selector = scraper::Selector::parse("html body div.content.content-column div.side-panel ul.side-panel-list li.side-panel-item a.side-panel-link").unwrap();
 
-    let question_panels = document.select(&selector);
-    let questions = question_panels
-        .map(|question_panel| {
-            let code =
-                extract_text_by_selector(&question_panel, "div.QuestionText span.QuestionCode");
-            let date_added = extract_text_by_selector(
-                &question_panel,
-                "div.QuestionText span.QuestionChangeDate",
-            );
-            let question_text = extract_text_by_selector(&question_panel, "div.QuestionImagePanel")
-                .trim()
-                .to_string();
+        let elements = document.select(&selector);
+        let topics = elements
+            .map(|element| {
+                let text = element.text().collect::<String>();
+                let url = element
+                    .value()
+                    .attr("href")
+                    .unwrap()
+                    .parse::<String>()
+                    .unwrap();
+                Topic { title: text, url }
+            })
+            .collect();
 
-            let question_image =
-                extract_question_media_by_selector(&question_panel, ".question-image > img");
+        Ok(topics)
+    }
 
-            let question_video =
-                extract_question_media_by_selector(&question_panel, ".question-video > video");
+    pub fn fetch_questions(&self, topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
+        let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=9999";
+        let document = self.get_page(&url)?;
+        let selector = scraper::Selector::parse(
+            "html body div.content.content-column div.container div.QuestionPanel",
+        )
+        .unwrap();
 
-            let mut options = extract_question_options(&question_panel);
+        let question_panels = document.select(&selector);
+        let questions = question_panels
+            .map(|question_panel| {
+                let code =
+                    extract_text_by_selector(&question_panel, "div.QuestionText span.QuestionCode");
+                let date_added = extract_text_by_selector(
+                    &question_panel,
+                    "div.QuestionText span.QuestionChangeDate",
+                );
+                let question_text =
+                    extract_text_by_selector(&question_panel, "div.QuestionImagePanel")
+                        .trim()
+                        .to_string();
 
-            let option_a = options.pop().unwrap();
-            let option_b = options.pop().unwrap();
-            let option_c = options.pop(); // option C is not always present
+                let question_image =
+                    extract_question_media_by_selector(&question_panel, ".question-image > img");
 
-            Question {
-                code,
-                date_added,
-                question_text,
-                question_image,
-                question_video,
-                option_a,
-                option_b,
-                option_c,
-            }
-        })
-        .collect();
-    Ok(questions)
+                let question_video =
+                    extract_question_media_by_selector(&question_panel, ".question-video > video");
+
+                let mut options = extract_question_options(&question_panel);
+
+                let option_a = options.pop().unwrap();
+                let option_b = options.pop().unwrap();
+                let option_c = options.pop(); // option C is not always present
+
+                Question {
+                    code,
+                    date_added,
+                    question_text,
+                    question_image,
+                    question_video,
+                    option_a,
+                    option_b,
+                    option_c,
+                }
+            })
+            .collect();
+        Ok(questions)
+    }
 }
 
 fn extract_text_by_selector(element: &scraper::ElementRef, selector: &str) -> String {
