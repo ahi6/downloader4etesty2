@@ -36,3 +36,29 @@ pub struct Question {
     pub option_b: QuestionOption,
     pub option_c: Option<QuestionOption>, // option C is not always present
 }
+
+/// Convenient placeholder implementation for Question
+/// Useful for testing
+impl Default for Question {
+    fn default() -> Self {
+        Self {
+            code: "[12345678]".to_string(),
+            date_added: "(1. 1. 2000)".to_string(),
+            question_text: "Placeholder question".to_string(),
+            question_image: None,
+            question_video: None,
+            option_a: QuestionOption {
+                content: QuestionOptionType::Text("A".to_string()),
+                is_correct: false,
+            },
+            option_b: QuestionOption {
+                content: QuestionOptionType::Text("B".to_string()),
+                is_correct: false,
+            },
+            option_c: Some(QuestionOption {
+                content: QuestionOptionType::Text("C".to_string()),
+                is_correct: true,
+            }),
+        }
+    }
+}
