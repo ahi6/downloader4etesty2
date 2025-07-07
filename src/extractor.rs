@@ -4,29 +4,29 @@ const BASE_URL: &str = "https://etesty2.mdcr.cz";
 // const USER_AGENT: &str = " "; // TODO: change to a valid user agent string
 
 pub struct Extractor {
-    client: reqwest::blocking::Client,
+    client: reqwest::Client,
 }
 
 impl Extractor {
     pub fn new() -> Self {
-        let client = reqwest::blocking::Client::builder()
+        let client = reqwest::Client::builder()
             // .user_agent(USER_AGENT)
             .build()
             .expect("Failed to create client");
         Extractor { client }
     }
 
-    fn get_page(&self, url: &str) -> Result<scraper::Html, reqwest::Error> {
-        let response = self.client.get(url).send()?;
-        let html = response.text()?;
+    async fn get_page(&self, url: &str) -> Result<scraper::Html, reqwest::Error> {
+        let response = self.client.get(url).send().await?;
+        let html = response.text().await?;
 
         let document = scraper::Html::parse_document(&html);
         Ok(document)
     }
 
-    pub fn fetch_bulletin_topics(&self) -> Result<Vec<Topic>, reqwest::Error> {
+    pub async fn fetch_bulletin_topics(&self) -> Result<Vec<Topic>, reqwest::Error> {
         let url = format!("{}/ro/Bulletin", BASE_URL);
-        let document = self.get_page(&url)?;
+        let document = self.get_page(&url).await?;
         let selector = scraper::Selector::parse("html body div.content.content-column div.side-panel ul.side-panel-list li.side-panel-item a.side-panel-link").unwrap();
 
         let elements = document.select(&selector);
@@ -46,9 +46,9 @@ impl Extractor {
         Ok(topics)
     }
 
-    pub fn fetch_questions(&self, topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
+    pub async fn fetch_questions(&self, topic_url: &str) -> Result<Vec<Question>, reqwest::Error> {
         let url = BASE_URL.to_string() + topic_url + "&pagex=1&pageSize=9999";
-        let document = self.get_page(&url)?;
+        let document = self.get_page(&url).await?;
         let selector = scraper::Selector::parse(
             "html body div.content.content-column div.container div.QuestionPanel",
         )
@@ -95,10 +95,13 @@ impl Extractor {
         Ok(questions)
     }
 
-    pub fn fetch_media_file(&self, relative_url: &str) -> Result<bytes::Bytes, reqwest::Error> {
+    pub async fn fetch_media_file(
+        &self,
+        relative_url: &str,
+    ) -> Result<bytes::Bytes, reqwest::Error> {
         let url = BASE_URL.to_string() + relative_url;
-        let response = self.client.get(&url).send()?;
-        response.bytes()
+        let response = self.client.get(&url).send().await?;
+        response.bytes().await
     }
 }
 
