@@ -13,19 +13,19 @@ impl Display for Topic {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub enum QuestionOptionType {
     Text(String),
     Image(String),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct QuestionOption {
     pub content: QuestionOptionType,
     pub is_correct: bool,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Question {
     pub code: String,
     pub date_added: String,
