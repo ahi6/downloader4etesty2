@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::fmt::Display;
 
 #[derive(Debug, Clone)]
-pub(crate) struct Topic {
+pub struct Topic {
     pub title: String,
     pub url: String,
 }
@@ -26,7 +26,7 @@ pub struct QuestionOption {
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct Question {
+pub struct Question {
     pub code: String,
     pub date_added: String,
     pub question_text: String,
